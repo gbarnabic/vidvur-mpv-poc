@@ -93,8 +93,14 @@ async function testVideo(filePath) {
     }
 
     // Check if VidVuR would require conversion
-    const wouldConvert = VIDVUR_UNSUPPORTED_CODECS.includes(codec.toLowerCase()) ||
-                        VIDVUR_CONVERSION_FORMATS.includes(ext);
+    // Check if codec string contains any unsupported codec name
+    const codecLower = codec.toLowerCase();
+    const codecUnsupported = VIDVUR_UNSUPPORTED_CODECS.some(unsupported => {
+      // Handle both "h263" and "h.263" formats
+      const normalized = unsupported.replace(/(\d)/, '.$1'); // h263 -> h.263
+      return codecLower.includes(unsupported) || codecLower.includes(normalized);
+    });
+    const wouldConvert = codecUnsupported || VIDVUR_CONVERSION_FORMATS.includes(ext);
 
     const result = {
       filename,
@@ -107,7 +113,7 @@ async function testVideo(filePath) {
       success: true,
       wouldConvert,
       reason: wouldConvert ? (
-        VIDVUR_UNSUPPORTED_CODECS.includes(codec.toLowerCase()) ?
+        codecUnsupported ?
           'Unsupported codec' :
           'Container format requires conversion'
       ) : null
@@ -204,7 +210,12 @@ function printReport() {
     codecs[r.codec]++;
   });
   Object.entries(codecs).forEach(([codec, count]) => {
-    const unsupported = VIDVUR_UNSUPPORTED_CODECS.includes(codec.toLowerCase());
+    // Use same matching logic as above
+    const codecLower = codec.toLowerCase();
+    const unsupported = VIDVUR_UNSUPPORTED_CODECS.some(unsup => {
+      const normalized = unsup.replace(/(\d)/, '.$1');
+      return codecLower.includes(unsup) || codecLower.includes(normalized);
+    });
     const indicator = unsupported ? colors.yellow + '⚠' : colors.green + '✓';
     console.log(`  ${indicator} ${codec}: ${count} file(s)${colors.reset}`);
   });
