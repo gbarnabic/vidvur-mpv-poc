@@ -51,13 +51,46 @@ async function testVideo(filePath) {
     await player.load(filePath);
     const loadTime = Date.now() - startTime;
 
-    // Get video info
-    const codec = await player.getProperty('video-codec');
-    const format = await player.getProperty('file-format');
-    const width = await player.getProperty('video-params/w');
-    const height = await player.getProperty('video-params/h');
-    const fps = await player.getProperty('video-params/fps');
-    const duration = await player.getProperty('duration');
+    // Wait a bit for video to be fully loaded
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Get video info - handle each property separately
+    let codec, format, width, height, fps, duration;
+    try {
+      codec = await player.getProperty('video-codec');
+    } catch (e) {
+      codec = null;
+    }
+    try {
+      format = await player.getProperty('file-format');
+    } catch (e) {
+      format = null;
+    }
+    try {
+      width = await player.getProperty('video-params/w');
+    } catch (e) {
+      width = null;
+    }
+    try {
+      height = await player.getProperty('video-params/h');
+    } catch (e) {
+      height = null;
+    }
+    try {
+      fps = await player.getProperty('container-fps');  // Use container-fps instead
+    } catch (e) {
+      fps = null;
+    }
+    try {
+      duration = await player.getProperty('duration');
+    } catch (e) {
+      duration = null;
+    }
+
+    // Check if we got valid codec info
+    if (!codec) {
+      throw new Error('Could not detect video codec');
+    }
 
     // Check if VidVuR would require conversion
     const wouldConvert = VIDVUR_UNSUPPORTED_CODECS.includes(codec.toLowerCase()) ||
@@ -96,12 +129,18 @@ async function testVideo(filePath) {
 
     return true;
   } catch (error) {
-    console.log(`  ${colors.red}✗ Failed: ${error.message}${colors.reset}`);
+    let errorMsg;
+    try {
+      errorMsg = error?.message || JSON.stringify(error, Object.getOwnPropertyNames(error)) || 'Unknown error';
+    } catch (e) {
+      errorMsg = String(error);
+    }
+    console.log(`  ${colors.red}✗ Failed: ${errorMsg}${colors.reset}`);
 
     results.push({
       filename,
       success: false,
-      error: error.message
+      error: errorMsg
     });
 
     return false;
@@ -227,7 +266,7 @@ async function main() {
       audio_only: false,
       verbose: false
     }, [
-      '--no-video',  // Don't display video window during batch test
+      '--pause',  // Start paused to avoid playback during test
       '--idle=yes'
     ]);
 
