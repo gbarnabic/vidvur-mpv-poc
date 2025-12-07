@@ -1,0 +1,22 @@
+{
+  "name": "vidvur-mpv-poc",
+  "version": "0.1.0",
+  "description": "Proof of concept testing mpv's codec support and frame-accurate playback without conversion overhead",
+  "main": "poc.js",
+  "scripts": {
+    "start": "node poc.js",
+    "test": "node test-codecs.js"
+  },
+  "keywords": [
+    "mpv",
+    "video",
+    "codec",
+    "frame-accurate",
+    "playback"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "node-mpv": "^2.0.0"
+  }
+}
